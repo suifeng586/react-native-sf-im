@@ -21,6 +21,7 @@ react-native link react-native-sf-aliyun-oss
 |login|account,pwd,suc,fail|string/string/func/func|登录聊天系统|参考例子|
 |logout|||登出聊天系统|参考例子|
 |send|message|SFIMMessage|发送消息|参考例子|
+|getChatList|||获取对话列表|参考例子|
 
 
 
