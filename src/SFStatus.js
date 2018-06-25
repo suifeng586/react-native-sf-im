@@ -19,17 +19,18 @@ export default {
         leave: 'leave'
     },
     code:{
-        connect_login_suc:{code:0,msg:'登录成功'},
-        connect_logout_suc:{code:0,msg:'登出成功'},
         connect_timeout:{code:100,msg:'连接超时'},
         connect_login_error:{code:101,msg:'账号密码错误'},
         connect_error:{code:102,msg:'服务器异常'},
         connect_logout_error:{code:103,msg:'登出失败,未登录'},
+        connect_reg_suc:{code:104,msg:'注册成功'},
+        connect_reg_error:{code:105,msg:'注册失败'},
+
         message_send_type_error:{code:200,msg:'消息类型错误'},
-        message_send_login_error:{code:201,msg:'未登录'},
         message_send_suc:{code:202,msg:'发送成功'},
-        message_upload_suc:{code:0,msg:'上传成功'},
         message_upload_fail:{code:203,msg:'上传失败'},
+
+        req_unlogin:{code:300,msg:'注册失败'},
     }
 
 }

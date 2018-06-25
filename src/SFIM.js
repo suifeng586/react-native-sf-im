@@ -16,15 +16,15 @@ import SFStatus from "./SFStatus"
 
 
 const SFIM = {
-    init({host:host,port:port,aliyunConfig:aliyunConfig}){
+    init({host:host,port:port,aliyun:aliyun}){
         SFIMConfig.host = host;
         SFIMConfig.port = port;
         SFIMConfig.aliyun = {
-            accessKey:aliyunConfig.accessKey,
-            secretKey:aliyunConfig.secretKey,
-            endPoint:aliyunConfig.endPoint,
-            bucketName:aliyunConfig.bucketName,
-            filePath:aliyunConfig.filePath
+            accessKey:aliyun.accessKey,
+            secretKey:aliyun.secretKey,
+            endPoint:aliyun.endPoint,
+            bucketName:aliyun.bucketName,
+            filePath:aliyun.filePath
         };
 
 
@@ -52,7 +52,7 @@ const SFIM = {
         if (this.logined == false){
             return false;
         }
-        this.socket.emit(SFIMConfig.event.getHistory,{
+        this.socket.emit(SFStatus.event.getHistory,{
             uid:this.uid,
             count:count,
             last_msg_id:lastMsgId
@@ -66,7 +66,7 @@ const SFIM = {
         if (this.logined == false){
             return false;
         }
-        this.socket.emit(SFIMConfig.event.getChatList,{
+        this.socket.emit(SFStatus.event.getChatList,{
             uid:this.uid
         },(data)=>{
             if (callBack){
@@ -78,27 +78,81 @@ const SFIM = {
       return new SFIMMessage({type:type,uid:this.uid})
     },
 
-    register(account,pwd,uid,nick=null,header=null){
+    register(account,pwd,uid,suc,fail){
+        let url = this.uri+'/auth/register';
+        SFNet.post(url,{account:account,pwd:pwd,uid:uid},(ret)=>{
+            if (ret.code == 0){
+                if (suc){
+                    suc(SFStatus.code.connect_reg_suc);
+                }
+            }else{
+                if (fail){
+                    fail(SFStatus.code.connect_reg_error);
+                }
+            }
+        },(err)=>{
+            if (fail){
+                fail(SFStatus.code.connect_error);
+            }
+        })
+    },
 
+    setNick(nick,suc,fail){
+        if (this.logined){
+            let url = this.uri+'/auth/set_nick';
+            SFNet.post(url,{uid:this.uid,nick:nick},(ret)=>{
+                if (suc){
+                    suc({code:0,msg:'设置成功'})
+                }
+            },(err)=>{
+                if (fail){
+                    fail(SFStatus.code.connect_error);
+                }
+            })
+        }else{
+            if (fail){
+                fail(SFStatus.code.req_unlogin);
+            }
+        }
+    },
+    setHeader(header,suc,fail){
+        if (this.logined){
+            let url = this.uri+'/auth/set_header';
+            SFNet.post(url,{uid:this.uid,header:header},(ret)=>{
+                if (suc){
+                    suc({code:0,msg:'设置成功'})
+                }
+            },(err)=>{
+                if (fail){
+                    fail(SFStatus.code.connect_error);
+                }
+            })
+        }else{
+            if (fail){
+                fail(SFStatus.code.req_unlogin);
+            }
+        }
     },
     login(account,pwd,suc,fail){
         let url = this.uri+'/auth/login';
+        console.log(url);
         SFNet.post(url,{account:account,pwd:pwd},(ret)=>{
             let code = ret.code;
+            console.log(ret)
             if (code == 0){
                 var socket = io(this.uri, {
                     transports: ['websocket'] // you need to explicitly tell it to use websockets
                 });
                 this.uid = ret.data.uid;
                 this.socket = socket;
-                this.socket.on(SFIMConfig.event.connect, () => {
+                this.socket.on(SFStatus.event.connect, () => {
                     this._listener();
                     if (this.onConnect){
                         this.onConnect();
                     }
-                    this.socket.emit(SFIMConfig.event.join,{uid:this.uid},(ret)=>{
+                    this.socket.emit(SFStatus.event.join,{uid:this.uid},(ret)=>{
                         if (suc){
-                            suc(SFStatus.code.connect_login_suc);
+                            suc({code:0,msg:'登录成功'});
                         }
                     });
 
@@ -111,6 +165,7 @@ const SFIM = {
             }
         },()=>{
             if (fail){
+                console.log('11111')
                 fail(SFStatus.code.connect_error);
             }
         });
@@ -122,13 +177,14 @@ const SFIM = {
             }
         }
         this.logined = false;
-        this.socket.emit(SFIMConfig.event.leave,{uid:this.uid},()=>{
-            if (suc){
-                suc(SFStatus.code.connect_logout_suc);
-            }
-            this.socket.emit(SFIMConfig.event.disconnect,{},()=>{
-
-            })
+        this.socket.emit(SFStatus.event.leave,{uid:this.uid},()=>{
+            this.socket.disconnect();
+            let url = this.uri+'/auth/logout';
+            SFNet.post(url,{},(ret)=>{
+                if (suc){
+                    suc({code:0,msg:'登出成功'});
+                }
+            });
         })
     },
     send(message){
@@ -153,7 +209,7 @@ const SFIM = {
                         message.uploadFinish(ret);
                     }
 
-                    this.socket.emit(SFIMConfig.event.send,message.body,(data)=>{
+                    this.socket.emit(SFStatus.event.send,message.body,(data)=>{
                         console.log(data);
                         if (message.suc){
                             var ret = SFStatus.code.message_send_suc;
@@ -168,7 +224,7 @@ const SFIM = {
                     console.log(err);
                 });
             }else{
-                this.socket.emit(SFIMConfig.event.send,message.body,(data)=>{
+                this.socket.emit(SFStatus.event.send,message.body,(data)=>{
                     console.log(data);
                     if (message.suc){
                         var ret = SFStatus.code.message_send_suc;
@@ -179,13 +235,13 @@ const SFIM = {
             }
         }else{
             if (message.fail){
-                message.fail(SFStatus.code.message_send_login_error);
+                message.fail(SFStatus.code.req_unlogin);
             }
         }
 
     },
     _listener(){
-        this.socket.on(SFIMConfig.event.receive,(data)=>{
+        this.socket.on(SFStatus.event.receive,(data)=>{
             if (data.type == SFIMConfig.msg.text){
                 if (this.onTextMessage){
                     this.onTextMessage(data);
@@ -199,18 +255,18 @@ const SFIM = {
                     this.onEmojiMessage(data);
                 }
             }
-            this.socket.emit(SFIMConfig.event.read,{msg_id:data.msg_id,from_id:data.from_id,to_id:data.to_id});
+            this.socket.emit(SFStatus.event.read,{msg_id:data.msg_id,from_id:data.from_id,to_id:data.to_id});
         });
 
-        this.socket.on(SFIMConfig.event.read,(data)=>{
+        this.socket.on(SFStatus.event.read,(data)=>{
             if (this.onReadMessage){
                 this.onReadMessage(data)
             }
         });
 
-        this.socket.on(SFIMConfig.event.disconnect,()=>{
-            if (this.onConnect){
-                this.onConnect();
+        this.socket.on(SFStatus.event.disconnect,()=>{
+            if (this.onDisconnect){
+                this.onDisconnect();
             }
         });
     }

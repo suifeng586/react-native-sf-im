@@ -6,9 +6,9 @@
 
 
 # 安装
-yarn add react-native-sf-im
-yarn add react-native-sf-aliyun-oss
-react-native link react-native-sf-aliyun-oss
+* yarn add react-native-sf-im
+* yarn add react-native-sf-aliyun-oss
+* react-native link react-native-sf-aliyun-oss
 
 
 # Methods
@@ -16,12 +16,15 @@ react-native link react-native-sf-aliyun-oss
 |:-----|:-----|:-----|:-----|:-----|
 |init|host,port,aliyunConfig|string,string,object|聊天服务器配置以及阿里云配置|参考例子|
 |listen|事件监听参数|object|监听聊天所有出发事件|参考例子|
-|getHistory|lastMsgId,count,callBack|string/number/func|获取历史消息|参考例子|
-|message|type|SFStatus.msg|创建消息结构体|参考例子|
+|register|account,pwd,uid|string/string/string|注册用户|参考例子|
 |login|account,pwd,suc,fail|string/string/func/func|登录聊天系统|参考例子|
 |logout|||登出聊天系统|参考例子|
+|message|type|SFStatus.msg|创建消息结构体|参考例子|
 |send|message|SFIMMessage|发送消息|参考例子|
+|getHistory|lastMsgId,count,callBack|string/number/func|获取历史消息|参考例子|
 |getChatList|||获取对话列表|参考例子|
+|setNick|nick|string|设置昵称|参考例子|
+|setHeader|header|string|设置头像|参考例子|
 
 
 
@@ -60,9 +63,37 @@ SFIM.listen({
                 console.log('连接成功');
             },
             onDisconnect: ()=> {
-                console.log('连接失败');
+                console.log('断开连接');
             },
         })
+
+# 注册账号
+SFIM.register('13888888888','123456','8',(data)=>{
+
+},(err)=>{
+
+})
+
+# 登录聊天服务器
+SFIM.login(this.state.account, this.state.pwd, (data)=> {
+            console.log('登录成功',data)
+        }, (err)=> {
+            console.log('登录失败',err)
+        })
+
+# 设置昵称
+SFIM.setNick(nick,(ret)=>{
+
+},(err)=>{
+
+})
+
+# 设置头像
+SFIM.setHeader(header,(ret)=>{
+
+},(err)=>{
+
+})
 
 # 发送文本消息
 var msg = SFIM.message(SFIMConfig.msg.text);
@@ -124,3 +155,4 @@ SFIM.getChatList((data)=>{
     console.log('对话列表',data)
 })
 ```
+
